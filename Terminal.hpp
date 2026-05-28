@@ -27,16 +27,17 @@ public:
         #endif
     }
 
-    // Afficher un titre
+    // Afficher un titre amélioré avec encadré coloré
     static void showTitle(const std::string& title) {
-        std::cout << "\n" << std::string(70, '=') << std::endl;
-        std::cout << "  " << title << std::endl;
-        std::cout << std::string(70, '=') << std::endl << std::endl;
+        std::string line(70, '=');
+        std::cout << "\n\033[1;36m+" << line << "+\033[0m\n";
+        std::cout << "\033[1;36m|\033[0m  \033[1;37m" << std::left << std::setw(66) << title << "\033[0m\033[1;36m|\033[0m\n";
+        std::cout << "\033[1;36m+" << line << "+\033[0m\n\n";
     }
 
-    // Afficher une section
+    // Afficher une section avec séparateur coloré
     static void showSection(const std::string& section) {
-        std::cout << "\n--- " << section << std::endl << std::endl;
+        std::cout << "\n\033[2m──── " << section << " ────\033[0m\n\n";
     }
 
     // Afficher une ligne pointillée
@@ -49,27 +50,35 @@ public:
         std::cout << msg << std::endl;
     }
 
-    // Afficher avec couleur (simple ANSI codes)
+    // Afficher avec symboles colorés
     static void printSuccess(const std::string& msg) {
-        std::cout << "\033[32m[OK] " << msg << "\033[0m" << std::endl;
+        std::cout << "\033[32m✓\033[0m " << msg << std::endl;
     }
 
     static void printError(const std::string& msg) {
-        std::cout << "\033[31m[ERR] " << msg << "\033[0m" << std::endl;
+        std::cout << "\033[31m✗\033[0m " << msg << std::endl;
     }
 
     static void printInfo(const std::string& msg) {
-        std::cout << "\033[34m[INFO] " << msg << "\033[0m" << std::endl;
+        std::cout << "\033[34mℹ\033[0m " << msg << std::endl;
     }
 
     static void printWarning(const std::string& msg) {
-        std::cout << "\033[33m[WARN] " << msg << "\033[0m" << std::endl;
+        std::cout << "\033[33m⚠\033[0m " << msg << std::endl;
     }
 
-    // Pause et attendre une touche
+    // Pause robuste qui vide le buffer stdin complètement
+    static void waitEnter() {
+        std::cout << "\n  \033[2m[ Appuyez sur Entrée pour continuer ]\033[0m";
+        std::cout.flush();
+        while (std::getchar() != '\n') {
+            // Vider le buffer complètement
+        }
+    }
+
+    // Pause (alias, utilise la robuste waitEnter)
     static void pause() {
-        std::cout << "\nAppuyez sur Entrée pour continuer..." << std::endl;
-        std::cin.ignore();
+        waitEnter();
     }
 
     // Lire l'input utilisateur
@@ -94,19 +103,19 @@ public:
     static std::string readSpecialKey() {
         struct termios oldt, newt;
         std::string key;
-        
+
         // Sauvegarder les paramètres actuels du terminal
         tcgetattr(STDIN_FILENO, &oldt);
         newt = oldt;
-        
+
         // Configurer le terminal en mode raw
         newt.c_lflag &= ~(ICANON | ECHO);
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        
+
         char c;
         if (read(STDIN_FILENO, &c, 1) == 1) {
             key += c;
-            
+
             // Si c'est un caractère d'échappement (27), lire la séquence complète
             if (c == 27) {
                 // Lire les caractères suivants (timeout court)
@@ -114,7 +123,7 @@ public:
                 fd_set fds;
                 FD_ZERO(&fds);
                 FD_SET(STDIN_FILENO, &fds);
-                
+
                 if (select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0) {
                     char seq[3];
                     int bytes = read(STDIN_FILENO, seq, sizeof(seq));
@@ -124,10 +133,10 @@ public:
                 }
             }
         }
-        
+
         // Restaurer les paramètres du terminal
         tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-        
+
         return key;
     }
 
@@ -179,9 +188,16 @@ public:
 
     // Afficher une liste avec navigation par flèches haut/bas (utilisant ncurses)
     static int selectFromListWithArrows(const std::string& title, const std::vector<std::pair<std::string, std::string>>& items) {
+        // Initialiser setlocale une seule fois pour l'UTF-8
+        static bool localeInitialized = false;
+        if (!localeInitialized) {
+            setlocale(LC_ALL, "");
+            localeInitialized = true;
+        }
+
         // Créer un menu Ncurses avec les options
         NcursesMenu menu(title);
-        
+
         for (const auto& item : items) {
             std::string display = item.first;
             if (!item.second.empty()) {
@@ -207,21 +223,21 @@ public:
     static std::string selectScale() {
         auto scales = ScalesDatabase::listScales();
         std::vector<std::pair<std::string, std::string>> scaleItems;
-        std::vector<std::string> scaleKeys; // Pour stocker les clés internes
-        
+        std::vector<std::string> scaleKeys;
+
         for (const auto& scale_name : scales) {
             try {
                 const auto& entry = ScalesDatabase::getScale(scale_name);
                 scaleItems.emplace_back(entry.name + " (" + entry.formula + ")", entry.description);
-                scaleKeys.push_back(scale_name); // Stocker la clé interne
+                scaleKeys.push_back(scale_name);
             } catch (...) {
                 // Ignorer les erreurs
             }
         }
-        
-        int selected = selectFromListWithArrows("Sélectionnez une gamme", scaleItems);
+
+        int selected = selectFromListWithArrows("♩ Choisissez une gamme", scaleItems);
         if (selected >= 0 && selected < static_cast<int>(scaleKeys.size())) {
-            return scaleKeys[selected]; // Retourner la clé interne
+            return scaleKeys[selected];
         }
         return "";
     }
@@ -230,21 +246,21 @@ public:
     static std::string selectChord() {
         auto chords = ChordsDatabase::listChords();
         std::vector<std::pair<std::string, std::string>> chordItems;
-        std::vector<std::string> chordKeys; // Pour stocker les clés internes
-        
+        std::vector<std::string> chordKeys;
+
         for (const auto& chord_name : chords) {
             try {
                 const auto& entry = ChordsDatabase::getChord(chord_name);
                 chordItems.emplace_back(entry.name + " (" + entry.formula + ")", entry.description);
-                chordKeys.push_back(chord_name); // Stocker la clé interne
+                chordKeys.push_back(chord_name);
             } catch (...) {
                 // Ignorer les erreurs
             }
         }
-        
-        int selected = selectFromListWithArrows("Sélectionnez un accord", chordItems);
+
+        int selected = selectFromListWithArrows("♩ Choisissez un accord", chordItems);
         if (selected >= 0 && selected < static_cast<int>(chordKeys.size())) {
-            return chordKeys[selected]; // Retourner la clé interne
+            return chordKeys[selected];
         }
         return "";
     }
@@ -254,8 +270,8 @@ public:
         std::vector<std::string> notes = {
             "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
         };
-        
-        int selected = selectFromList("Sélectionnez une note racine", notes);
+
+        int selected = selectFromList("♩ Note fondamentale", notes);
         if (selected >= 0 && selected < static_cast<int>(notes.size())) {
             return notes[selected];
         }
