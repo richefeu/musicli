@@ -201,6 +201,27 @@ public:
                 alteration -= 12;
             }
 
+            // Simplifier : éviter les doubles dièses/bémols en préférant la lettre adjacente
+            if (alteration >= 2) {
+                char next = getNextLetter(noteLetter);
+                int nextSemitone = getLetterSemitone(next);
+                int newAlt = ((targetSemitone - nextSemitone) % 12 + 12) % 12;
+                if (newAlt > 6) newAlt -= 12;
+                if (std::abs(newAlt) < std::abs(alteration)) {
+                    noteLetter = next;
+                    alteration = newAlt;
+                }
+            } else if (alteration <= -2) {
+                char prev = getPreviousLetter(noteLetter);
+                int prevSemitone = getLetterSemitone(prev);
+                int newAlt = ((targetSemitone - prevSemitone) % 12 + 12) % 12;
+                if (newAlt > 6) newAlt -= 12;
+                if (std::abs(newAlt) < std::abs(alteration)) {
+                    noteLetter = prev;
+                    alteration = newAlt;
+                }
+            }
+
             std::string noteName = buildNoteName(noteLetter, alteration);
             notes.push_back(noteName);
         }

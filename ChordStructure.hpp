@@ -108,6 +108,22 @@ private:
         return name;
     }
 
+    char getNextLetter(char letter) const {
+        static const std::map<char, char> nextLetters = {
+            {'C', 'D'}, {'D', 'E'}, {'E', 'F'}, {'F', 'G'}, {'G', 'A'}, {'A', 'B'}, {'B', 'C'}
+        };
+        auto it = nextLetters.find(letter);
+        return it != nextLetters.end() ? it->second : letter;
+    }
+
+    char getPreviousLetter(char letter) const {
+        static const std::map<char, char> prevLetters = {
+            {'C', 'B'}, {'D', 'C'}, {'E', 'D'}, {'F', 'E'}, {'G', 'F'}, {'A', 'G'}, {'B', 'A'}
+        };
+        auto it = prevLetters.find(letter);
+        return it != prevLetters.end() ? it->second : letter;
+    }
+
     std::string generateKey(const std::vector<int>& intervals) const {
         std::vector<int> sorted = intervals;
         std::sort(sorted.begin(), sorted.end());
@@ -251,6 +267,27 @@ public:
 
             if (alteration > 6) {
                 alteration -= 12;
+            }
+
+            // Simplifier : éviter les doubles dièses/bémols en préférant la lettre adjacente
+            if (alteration >= 2) {
+                char next = getNextLetter(noteLetter);
+                int nextSemitone = getLetterSemitone(next);
+                int newAlt = ((targetSemitone - nextSemitone) % 12 + 12) % 12;
+                if (newAlt > 6) newAlt -= 12;
+                if (std::abs(newAlt) < std::abs(alteration)) {
+                    noteLetter = next;
+                    alteration = newAlt;
+                }
+            } else if (alteration <= -2) {
+                char prev = getPreviousLetter(noteLetter);
+                int prevSemitone = getLetterSemitone(prev);
+                int newAlt = ((targetSemitone - prevSemitone) % 12 + 12) % 12;
+                if (newAlt > 6) newAlt -= 12;
+                if (std::abs(newAlt) < std::abs(alteration)) {
+                    noteLetter = prev;
+                    alteration = newAlt;
+                }
             }
 
             std::string noteName = buildNoteName(noteLetter, alteration);
