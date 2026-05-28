@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "ChordDiagrams.hpp"
+#include "ChordStructure.hpp"
 
 class GuitarNeck {
 private:
@@ -59,79 +59,6 @@ public:
         {"maj7", {0, 4, 7, 11}}, {"Δ7", {0, 4, 7, 11}}, {"dim", {0, 3, 6}},
         {"dim7", {0, 3, 6, 9}},  {"aug", {0, 4, 8}},    {"sus4", {0, 5, 7}},
         {"sus2", {0, 2, 7}}};
-  }
-
-  void displayChordDiagram(const std::string &chordName,
-                           const ChordStructure & /*chordStructure*/,
-                           const std::string & /*root*/,
-                           const ChordDiagram &diagram) const {
-    std::cout << "\n=== CHORD DIAGRAM: " << chordName << " ===\n";
-    std::cout << "Position: " << diagram.name << "\n";
-    std::cout << "Fundamental on string: " << stringLabels[diagram.rootString]
-              << " (fret " << diagram.rootFret << ")\n";
-    std::cout << "Difficulty: " << diagram.difficulty << "/10\n\n";
-
-    // Ligne de repères pour les frettes (marqueur à la 1ère frette)
-    std::cout << "    ";
-    for (int i = 1; i <= 4; ++i) {
-      if (i == 1) {
-        std::cout << "  •  ";
-      } else {
-        std::cout << "     ";
-      }
-    }
-    std::cout << "\n";
-
-    // En-tête avec les noms des cordes (EADGBE - de grave à aigu)
-    std::cout << "    ";
-    for (int i = 0; i <= 5; ++i) {
-      std::cout << std::setw(5) << stringLabels[i];
-    }
-    std::cout << "\n";
-
-    // Affichage des 4 premières frettes
-    int startFret = 1;
-    for (int string = 0; string <= 5; ++string) {
-      if (diagram.frets[string] > 0) {
-        startFret = diagram.frets[string];
-        break;
-      }
-    }
-
-    for (int fretOffset = 0; fretOffset < 4; ++fretOffset) {
-      int actualFret = startFret + fretOffset;
-      std::cout << std::setw(4) << actualFret << " ";
-
-      for (int string = 0; string <= 5; ++string) {
-        int fretPos = diagram.frets[string];
-
-        if (fretPos >= 0 && fretPos == actualFret) {
-          bool isRoot =
-              (string == diagram.rootString && actualFret == diagram.rootFret);
-          int finger = diagram.fingering[string];
-
-          if (isRoot) {
-            std::cout << "\033[1;91m  " << finger << "  \033[0m";
-          } else {
-            std::cout << "\033[1;92m  " << finger << "  \033[0m";
-          }
-        } else if (fretPos == 0) {
-          std::cout << "  X  ";
-        } else if (fretPos == -1 && actualFret == startFret) {
-          std::cout << "  O  ";
-        } else {
-          std::cout << "  .  ";
-        }
-      }
-      std::cout << "\n";
-    }
-
-    std::cout << "\nLégende: ";
-    std::cout << "\033[1;91mX\033[0m = Fondamentale, ";
-    std::cout << "\033[1;92mN\033[0m = Autres notes, ";
-    std::cout << "X = Corde étouffée, O = Corde à vide\n";
-    std::cout << "Doigté: 1=Index, 2=Majeur, 3=Annulaire, 4=Auriculaire\n";
-    std::cout << "\n";
   }
 
   void showChord(const std::string &chordName,

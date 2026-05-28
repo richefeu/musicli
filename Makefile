@@ -7,9 +7,9 @@ DB_SRC := test_databases.cpp
 CLI_SRC := main.cpp
 CLI_APP := musicli
 
-HEADERS := ScaleStructure.hpp ChordStructure.hpp ScalesDatabase.hpp ChordsDatabase.hpp Terminal.hpp GuitarNeck.hpp Application.hpp
+HEADERS := ScaleStructure.hpp ChordStructure.hpp ScalesDatabase.hpp ChordsDatabase.hpp Terminal.hpp GuitarNeck.hpp ChordDiagrams.hpp Application.hpp
 
-.PHONY: test test_scale test_chord test_databases app clean help
+.PHONY: test test_scale test_chord test_chord_diagram test_databases app clean help
 
 # Default: compile app
 all: app
@@ -25,7 +25,7 @@ $(CLI_APP): $(CLI_SRC) $(HEADERS)
 run: $(CLI_APP)
 	@./$(CLI_APP)
 
-test: test_scale test_chord test_databases
+test: test_scale test_chord test_chord_diagram test_databases
 
 test_scale:
 	@echo "Compiling scale tests..."
@@ -41,6 +41,13 @@ test_chord:
 	@echo "Running chord tests..."
 	@./test_chord 2>/dev/null || echo "Note: Binary execution failed (macOS restriction)."
 
+test_chord_diagram:
+	@echo "\nCompiling chord diagram tests..."
+	$(CXX) $(CXXFLAGS) test_chord_diagram.cpp -o test_chord_diagram 2>&1
+	@echo "[OK] Compilation successful"
+	@echo "Running chord diagram tests..."
+	@./test_chord_diagram 2>/dev/null || echo "Note: Binary execution failed (macOS restriction)."
+
 test_databases:
 	@echo "\nCompiling database tests..."
 	$(CXX) $(CXXFLAGS) $(DB_SRC) -o test_databases 2>&1
@@ -50,7 +57,7 @@ test_databases:
 
 clean:
 	@echo "Cleaning..."
-	rm -f test_scale test_chord test_databases $(CLI_APP) *.o *.pch
+	rm -f test_scale test_chord test_chord_diagram test_databases $(CLI_APP) *.o *.pch
 	@echo "[OK] Clean complete"
 
 help:
