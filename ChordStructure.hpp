@@ -17,6 +17,7 @@
  * @date 2024
  */
 
+#include <cctype>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -59,14 +60,22 @@ private:
         return str.substr(start, end - start + 1);
     }
 
+    // Un degré : chiffre 1–7 suivi d'altérations ("3-", "5+", "7--").
     void parseToken(const std::string& token) {
         size_t pos = 0;
-        int degree = std::stoi(token, &pos);
+        while (pos < token.size() && isdigit(static_cast<unsigned char>(token[pos]))) pos++;
+        if (pos == 0) {
+            throw std::invalid_argument("Degré invalide : \"" + token + "\".");
+        }
+        int degree = std::stoi(token.substr(0, pos));
+        if (degree < 1 || degree > 7) {
+            throw std::invalid_argument("Degré invalide : " + token + ". Doit être entre 1 et 7 (9 = 2, 11 = 4, 13 = 6).");
+        }
         int modification = 0;
-        if (pos < token.size()) {
-            char mod = token[pos];
-            if (mod == '-') modification = -1;
-            else if (mod == '+') modification = +1;
+        for (; pos < token.size(); ++pos) {
+            if (token[pos] == '-') modification--;
+            else if (token[pos] == '+') modification++;
+            else throw std::invalid_argument("Modificateur invalide : " + token + ". Utilisez '-' ou '+'.");
         }
         degrees.emplace_back(degree, modification);
     }
@@ -107,22 +116,6 @@ private:
         return name;
     }
 
-    char getNextLetter(char letter) const {
-        static const std::map<char, char> nextLetters = {
-            {'C', 'D'}, {'D', 'E'}, {'E', 'F'}, {'F', 'G'}, {'G', 'A'}, {'A', 'B'}, {'B', 'C'}
-        };
-        auto it = nextLetters.find(letter);
-        return it != nextLetters.end() ? it->second : letter;
-    }
-
-    char getPreviousLetter(char letter) const {
-        static const std::map<char, char> prevLetters = {
-            {'C', 'B'}, {'D', 'C'}, {'E', 'D'}, {'F', 'E'}, {'G', 'F'}, {'A', 'G'}, {'B', 'A'}
-        };
-        auto it = prevLetters.find(letter);
-        return it != prevLetters.end() ? it->second : letter;
-    }
-
     std::string generateKey(const std::vector<int>& intervals) const {
         std::vector<int> sorted = intervals;
         std::sort(sorted.begin(), sorted.end());
@@ -151,16 +144,11 @@ public:
      * Elle vérifie que la formule est valide et contient au moins
      * la fondamentale (degré 1).
      * 
-     * @throw std::invalid_argument Si la formule ne contient pas le degré 1
-     *        ou si la syntaxe est invalide
+     * @throw std::invalid_argument Si la syntaxe est invalide ou si deux
+     *        degrés donnent la même note
      */
     void parseFormula() {
         degrees.clear();
-        if (formula.find(',') == std::string::npos) {
-            throw std::invalid_argument(
-                "Formule invalide : les degrés doivent être séparés par des virgules (ex: \"3,5\")."
-            );
-        }
 
         size_t start = 0;
         size_t end = formula.find(',');
@@ -183,6 +171,14 @@ public:
         }
         if (!hasRoot) {
             degrees.insert(degrees.begin(), {1, 0});
+        }
+
+        // Valider l'unicité des notes (en classes de hauteur)
+        std::vector<int> pcs;
+        for (int interval : getIntervalsInSemitones()) pcs.push_back(((interval % 12) + 12) % 12);
+        std::sort(pcs.begin(), pcs.end());
+        if (std::unique(pcs.begin(), pcs.end()) != pcs.end()) {
+            throw std::invalid_argument("La formule \"" + formula + "\" contient plusieurs fois la même note.");
         }
     }
 
@@ -222,8 +218,8 @@ public:
         std::vector<std::string> labels;
         for (const auto& [degree, mod] : degrees) {
             std::string l = std::to_string(degree);
-            if (mod > 0) l += "+";
-            else if (mod < 0) l += "-";
+            if (mod > 0) l += std::string(mod, '+');
+            else if (mod < 0) l += std::string(-mod, '-');
             labels.push_back(l);
         }
         return labels;
@@ -243,8 +239,8 @@ public:
      * @return Vecteur de noms de notes (ex: ["C", "E", "G"])
      * @throw std::invalid_argument Si la note fondamentale est invalide
      * 
-     * @note La méthode gère automatiquement les enharmonies pour choisir
-     *       les noms de notes les plus appropriés (ex: "F#" au lieu de "Gb")
+     * @note Orthographe théorique stricte : chaque degré garde sa lettre
+     *       (tierce de C# = E#, quinte augmentée de B = F##)
      */
     std::vector<std::string> getChordNotes(const std::string& rootNote) const {
         auto it = noteToSemitone.find(rootNote);
@@ -253,43 +249,15 @@ public:
         }
         int rootSemitone = it->second;
 
+        // Orthographe théorique stricte : une lettre par degré (E augmenté : B# ;
+        // B augmenté : F##).
         std::vector<std::string> notes;
         for (const auto& [degree, modification] : degrees) {
             char noteLetter = getLetterForDegree(rootNote, degree);
-
-            int expectedSemitone = degreeToSemitones[degree];
-            int targetSemitone = (rootSemitone + expectedSemitone + modification) % 12;
-
-            int letterSemitone = getLetterSemitone(noteLetter);
-            int alteration = ((targetSemitone - letterSemitone) % 12 + 12) % 12;
-
-            if (alteration > 6) {
-                alteration -= 12;
-            }
-
-            // Simplifier : éviter les doubles dièses/bémols en préférant la lettre adjacente
-            if (alteration >= 2) {
-                char next = getNextLetter(noteLetter);
-                int nextSemitone = getLetterSemitone(next);
-                int newAlt = ((targetSemitone - nextSemitone) % 12 + 12) % 12;
-                if (newAlt > 6) newAlt -= 12;
-                if (std::abs(newAlt) < std::abs(alteration)) {
-                    noteLetter = next;
-                    alteration = newAlt;
-                }
-            } else if (alteration <= -2) {
-                char prev = getPreviousLetter(noteLetter);
-                int prevSemitone = getLetterSemitone(prev);
-                int newAlt = ((targetSemitone - prevSemitone) % 12 + 12) % 12;
-                if (newAlt > 6) newAlt -= 12;
-                if (std::abs(newAlt) < std::abs(alteration)) {
-                    noteLetter = prev;
-                    alteration = newAlt;
-                }
-            }
-
-            std::string noteName = buildNoteName(noteLetter, alteration);
-            notes.push_back(noteName);
+            int targetSemitone = rootSemitone + degreeToSemitones[degree] + modification;
+            int alteration = ((targetSemitone - getLetterSemitone(noteLetter)) % 12 + 12) % 12;
+            if (alteration > 6) alteration -= 12;
+            notes.push_back(buildNoteName(noteLetter, alteration));
         }
         return notes;
     }

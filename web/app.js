@@ -93,6 +93,9 @@ function svg(tag, attrs = {}, parent) {
   return el;
 }
 
+// Réduit la police des étiquettes de 3 caractères (F##, Bbb, 7--) pour tenir dans la pastille.
+const fitLabel = (label, size) => (label.length >= 3 ? { "font-size": size - 2.5 } : {});
+
 function renderControls() {
   document.querySelectorAll("[data-mode]").forEach((b) =>
     b.classList.toggle("on", b.dataset.mode === state.mode));
@@ -223,7 +226,7 @@ function renderNeck() {
         const inShape = shape && shape[s] === f;
         dot = svg("circle", { class: "dot" + (shape && !inShape ? " dim" : ""), cx: x, cy: y, r: 11, fill: colorOf(c.degree) }, g);
         const label = state.labels === "degrees" ? (c.isRoot ? "R" : c.degree) : c.name;
-        svg("text", { class: "dot-label" + (shape && !inShape ? " dim" : ""), x, y }, g).textContent = label;
+        svg("text", { class: "dot-label" + (shape && !inShape ? " dim" : ""), x, y, ...fitLabel(label, 11) }, g).textContent = label;
         if (inShape) svg("circle", { class: "ring", cx: x, cy: y, r: 14 }, g);
       } else if (state.showAll) {
         svg("text", { class: "ghost", x, y }, g).textContent = c.name;
@@ -272,7 +275,7 @@ function renderDiagram(d, index) {
     const cy = TOP + (f - d.startFret + 0.5) * SY;
     const degree = view.degrees[view.notes.indexOf(d.names[s])] ?? "";
     svg("circle", { cx: x(s), cy, r: 8.5, fill: colorOf(degree) }, el);
-    svg("text", { class: "dot-label", x: x(s), y: cy }, el).textContent = d.names[s];
+    svg("text", { class: "dot-label", x: x(s), y: cy, ...fitLabel(d.names[s], 10) }, el).textContent = d.names[s];
   }
 
   box.onclick = () => {

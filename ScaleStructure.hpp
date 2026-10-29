@@ -40,6 +40,9 @@ private:
         while (i < degreeStr.size() && isdigit(degreeStr[i])) {
             i++;
         }
+        if (i == 0) {
+            throw std::invalid_argument("Degré invalide : \"" + degreeStr + "\".");
+        }
         int degree = std::stoi(degreeStr.substr(0, i));
 
         if (degree < 1 || degree > 7) {
@@ -47,12 +50,11 @@ private:
         }
 
         int alteration = 0;
-        if (i < degreeStr.size()) {
-            char modifier = degreeStr[i];
-            if (modifier == '-') {
-                alteration = -1;
-            } else if (modifier == '+') {
-                alteration = +1;
+        for (; i < degreeStr.size(); ++i) {
+            if (degreeStr[i] == '-') {
+                alteration--;
+            } else if (degreeStr[i] == '+') {
+                alteration++;
             } else {
                 throw std::invalid_argument("Modificateur invalide : " + degreeStr + ". Utilisez '-' ou '+'.");
             }
@@ -124,54 +126,19 @@ private:
     }
 
     std::string buildNoteName(char baseLetter, int semitoneOffset) const {
-        // Respecter toujours la lettre de base du degré
-        // et choisir entre # et b pour l'altération
-        // selon les règles musicales standard
-        
-        if (semitoneOffset == 0) {
-            return std::string(1, baseLetter);
+        std::string name(1, baseLetter);
+        if (semitoneOffset > 0) {
+            name += std::string(semitoneOffset, '#');
+        } else if (semitoneOffset < 0) {
+            name += std::string(-semitoneOffset, 'b');
         }
-        
-        // Pour les altérations de +1 ou -1, choisir entre # et b
-        // en fonction de règles musicales standard
-        if (semitoneOffset == 1) {
-            // Pour +1, utiliser # par défaut
-            // Ex: degré 3+ = F (pas E#), donc on utilise la lettre suivante
-            if (baseLetter == 'E' || baseLetter == 'B') {
-                char nextLetter = getNextLetter(baseLetter);
-                return std::string(1, nextLetter); // F ou C
-            }
-            return std::string(1, baseLetter) + "#";
-        }
-        else if (semitoneOffset == -1) {
-            // Pour -1, toujours utiliser b (convention standard)
-            // Ex: degré 3- = Eb (pas D#), degré 6- = Ab (pas G#), degré 7- = Bb (pas A#)
-            return std::string(1, baseLetter) + "b";
-        }
-        else if (semitoneOffset > 1) {
-            // Pour les altérations multiples, toujours utiliser #
-            return std::string(1, baseLetter) + std::string(semitoneOffset, '#');
-        }
-        else {
-            // Pour les altérations multiples négatives, toujours utiliser b
-            return std::string(1, baseLetter) + std::string(-semitoneOffset, 'b');
-        }
+        return name;
     }
 
-    char getNextLetter(char letter) const {
-        static const std::map<char, char> nextLetters = {
-            {'C', 'D'}, {'D', 'E'}, {'E', 'F'}, {'F', 'G'}, {'G', 'A'}, {'A', 'B'}, {'B', 'C'}
-        };
-        auto it = nextLetters.find(letter);
-        return it != nextLetters.end() ? it->second : letter;
-    }
-
-    char getPreviousLetter(char letter) const {
-        static const std::map<char, char> prevLetters = {
-            {'C', 'B'}, {'D', 'C'}, {'E', 'D'}, {'F', 'E'}, {'G', 'F'}, {'A', 'G'}, {'B', 'A'}
-        };
-        auto it = prevLetters.find(letter);
-        return it != prevLetters.end() ? it->second : letter;
+    // Altération (en demi-tons, entre -6 et +5) qui amène la lettre sur la hauteur visée.
+    static int alterationFor(char letter, int targetSemitone) {
+        int alteration = ((targetSemitone - getLetterSemitone(letter)) % 12 + 12) % 12;
+        return alteration > 6 ? alteration - 12 : alteration;
     }
 
 public:
@@ -188,44 +155,13 @@ public:
         }
         int rootSemitone = it->second;
 
+        // Orthographe théorique stricte : une lettre par degré, avec autant
+        // d'altérations que nécessaire (C# majeur : E#, B# ; D# majeur : F##, C##).
         for (const auto& di : degrees) {
             char noteLetter = getLetterForDegree(rootNote, di.degree);
-
-            int expectedSemitone = degreeToSemitones[di.degree];
-            int targetSemitone = (rootSemitone + expectedSemitone + di.alteration) % 12;
-
-            int letterSemitone = getLetterSemitone(noteLetter);
-            int alteration = ((targetSemitone - letterSemitone) % 12 + 12) % 12;
-
-            if (alteration > 6) {
-                alteration -= 12;
-            }
-
-            // Simplifier : éviter les doubles dièses/bémols en préférant la lettre adjacente
-            if (alteration >= 2) {
-                char next = getNextLetter(noteLetter);
-                int nextSemitone = getLetterSemitone(next);
-                int newAlt = ((targetSemitone - nextSemitone) % 12 + 12) % 12;
-                if (newAlt > 6) newAlt -= 12;
-                if (std::abs(newAlt) < std::abs(alteration)) {
-                    noteLetter = next;
-                    alteration = newAlt;
-                }
-            } else if (alteration <= -2) {
-                char prev = getPreviousLetter(noteLetter);
-                int prevSemitone = getLetterSemitone(prev);
-                int newAlt = ((targetSemitone - prevSemitone) % 12 + 12) % 12;
-                if (newAlt > 6) newAlt -= 12;
-                if (std::abs(newAlt) < std::abs(alteration)) {
-                    noteLetter = prev;
-                    alteration = newAlt;
-                }
-            }
-
-            std::string noteName = buildNoteName(noteLetter, alteration);
-            notes.push_back(noteName);
+            int targetSemitone = rootSemitone + degreeToSemitones[di.degree] + di.alteration;
+            notes.push_back(buildNoteName(noteLetter, alterationFor(noteLetter, targetSemitone)));
         }
-
         return notes;
     }
 

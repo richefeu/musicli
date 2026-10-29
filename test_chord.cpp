@@ -32,10 +32,14 @@ int main() {
         {"Accord augmenté (C)", "3,5+", "C", {"C", "E", "G#"}, "aug"},
         {"Sus2 (C)", "2,5", "C", {"C", "D", "G"}, "sus2"},
         {"Sus4 (C)", "4,5", "C", {"C", "F", "G"}, "sus4"},
-        // Enharmonic tests for augmented chords (prevent double-sharps)
+        // Orthographe stricte des accords augmentés (B# et F## si nécessaire)
         {"Accord augmenté (E)", "3,5+", "E", {"E", "G#", "B#"}, "aug"},
-        {"Accord augmenté (B)", "3,5+", "B", {"B", "D#", "G"}, "aug"},
+        {"Accord augmenté (B)", "3,5+", "B", {"B", "D#", "F##"}, "aug"},
         {"Accord augmenté (F)", "3,5+", "F", {"F", "A", "C#"}, "aug"},
+        {"Accord majeur (C#)", "3,5", "C#", {"C#", "E#", "G#"}, ""},
+        {"Diminué 7 (C)", "3-,5-,7--", "C", {"C", "Eb", "Gb", "Bbb"}, "dim7"},
+        {"Power chord (E)", "5", "E", {"E", "B"}, "custom"},
+        {"Quartal (C)", "4,7-", "C", {"C", "F", "Bb"}, "custom"},
     };
 
     std::cout << "\n" << std::string(70, '=') << std::endl;

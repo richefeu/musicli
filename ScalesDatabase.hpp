@@ -42,7 +42,7 @@ public:
             "minor_melodic",   // Gamme mineure mélodique
             "pentatonic_major", // Pentatonique majeure
             "pentatonic_minor", // Pentatonique mineure
-            "pentatonic_blues", // Pentatonique blues
+            "pentatonic_blues", // Blues majeure
             "blues_scale",      // Gamme blues
             "dorian",          // Mode dorien
             "phrygian",        // Mode phrygien
@@ -51,18 +51,15 @@ public:
             "locrian",         // Mode locrien
             "wholeTone",       // Gamme par tons entiers
             "chromatic",        // Gamme chromatique
-            "aegean",          // Gamme égéenne
+            "aegean",          // Majeure harmonique
             "egyptian",        // Gamme égyptienne
             "japanese_hirajoshi", // Gamme japonaise
             "japanese_insen",   // Gamme japonaise
-            "jewish_heptahard", // Gamme juive
-            "diminished_wholetone", // Gamme diminuée-ton entier
-            "diminished_tonehalfTone", // Gamme diminuée-demi-ton entier
-            "harmonic_minor_arabic", // Gamme arabe
-            "bhairav",         // Gamme indienne
-            "khamaraj",        // Gamme indienne
-            "sus2_scale",      // Gamme sus2
-            "sus4_scale"       // Gamme sus4
+            "jewish_heptahard", // Freygish
+            "diminished_wholetone", // Diminuée ton / demi-ton
+            "diminished_tonehalfTone", // Diminuée demi-ton / ton
+            "harmonic_minor_arabic", // Majeure arabe
+            "bhairav"          // Gamme indienne
         };
         
         // Vérifier que toutes les gammes existent et ajouter celles qui manquent
@@ -104,32 +101,27 @@ const std::map<std::string, ScaleEntry> ScalesDatabase::database = {
     // Gammes pentatoniques
     {"pentatonic_major", {"Pentatonique majeure", "1,2,3,5,6", "5 notes, sons majeurs", {"major_pentatonic", "pentatonique"}}},
     {"pentatonic_minor", {"Pentatonique mineure", "1,3-,4,5,7-", "5 notes, sons mineurs", {"minor_pentatonic"}}},
-    {"pentatonic_blues", {"Pentatonique blues", "1,3-,4,4+,5,7-", "Pentatonique mineure avec la note bleue (F#/Gb)", {"blues"}}},
+    {"pentatonic_blues", {"Blues majeure", "1,2,3-,3,5,6", "Pentatonique majeure avec la tierce mineure (note bleue)", {"major_blues", "blues_majeur"}}},
 
     // Gammes exotiques et non-occidentales
-    {"blues_scale", {"Blues (hexatonique)", "1,3-,4,4+,5,7-", "La gamme bleue complète", {"blues_hexatonic"}}},
+    {"blues_scale", {"Blues (hexatonique)", "1,3-,4,4+,5,7-", "Pentatonique mineure avec la quarte augmentée (note bleue)", {"blues", "blues_hexatonic"}}},
     {"wholeTone", {"Ton entier (Whole tone)", "1,2,3,4+,5+,6+", "Tous les intervalles d'un ton", {"whole_tone"}}},
     {"chromatic", {"Chromatique", "1,1+,2,2+,3,4,4+,5,5+,6,6+,7", "Les 12 notes chromatiques", {"chromatic", "chromatic_scale"}}},
 
     // Modes grecs spécifiques
-    {"aegean", {"Égéen", "1,2,3,4,5,6-,7", "Intervalle caractéristique : 3ème majeure puis mineure", {"aegean"}}},
-    {"egyptian", {"Égyptienne", "1,3-,4,5,7-", "Pentatonique ancienne égyptienne", {"egyptian"}}},
-    {"japanese_hirajoshi", {"Hirajoshi (Japonaise)", "1,2,3-,5-,6-", "Gamme traditionnelle japonaise", {"hirajoshi"}}},
+    {"aegean", {"Majeure harmonique", "1,2,3,4,5,6-,7", "Majeure avec 6ème mineure (miroir de la mineure harmonique)", {"harmonic_major", "aegean"}}},
+    {"egyptian", {"Égyptienne", "1,2,4,5,7-", "Pentatonique suspendue (sans tierce)", {"egyptian", "suspended_pentatonic"}}},
+    {"japanese_hirajoshi", {"Hirajoshi (Japonaise)", "1,2,3-,5,6-", "Gamme traditionnelle japonaise", {"hirajoshi"}}},
     {"japanese_insen", {"Insen (Japonaise)", "1,2-,4,5,7-", "Gamme pentatonique japonaise", {"insen"}}},
-    {"jewish_heptahard", {"Heptahard (Juive)", "1,2,3,4,5,6,7-", "Gamme traditionnelle juive", {"jewish"}}},
+    {"jewish_heptahard", {"Freygish (Ahava Rabbah)", "1,2-,3,4,5,6-,7-", "Gamme juive / klezmer (phrygien dominant, 5e mode de la mineure harmonique)", {"freygish", "phrygian_dominant", "jewish"}}},
 
     // Gammes symétriques
-    {"diminished_wholetone", {"Diminuée-Ton entier", "1,2,3-,4,5-,6-,7", "Alternance tons/demi-tons", {"diminished_whole_tone"}}},
-    {"diminished_tonehalfTone", {"Diminuée-Demi-ton entier", "1,2-,3,4,5-,6,7-", "Alternance demi-tons/tons", {"diminished_tone_half_tone"}}},
+    {"diminished_wholetone", {"Diminuée (ton / demi-ton)", "1,2,3-,4,5-,6-,6,7", "Octatonique : alternance ton, demi-ton", {"whole_half_diminished", "diminished_whole_tone"}}},
+    {"diminished_tonehalfTone", {"Diminuée (demi-ton / ton)", "1,2-,3-,3,4+,5,6,7-", "Octatonique : alternance demi-ton, ton (accords 7b9)", {"half_whole_diminished", "diminished_tone_half_tone"}}},
 
     // Gammes arabes/moyen-orient
-    {"harmonic_minor_arabic", {"Mineure harmonique (arabe)", "1,2,3-,4,5,6-,7", "Avec la tierce mineure et septième majeure", {"arabic"}}},
+    {"harmonic_minor_arabic", {"Majeure arabe (locrien majeur)", "1,2,3,4,5-,6-,7-", "Majeure avec quinte, sixte et septième abaissées", {"arabian", "major_locrian", "arabic"}}},
 
     // Gammes hindoues
     {"bhairav", {"Bhairav (Indienne)", "1,2-,3,4,5,6-,7", "Mode traditionnel de la musique classique indienne", {"bhairav"}}},
-    {"khamaraj", {"Khamaraj (Indienne)", "1,2-,3,4,5-,6,7-", "Autre mode indien", {"khamaraj"}}},
-
-    // Autres
-    {"sus2_scale", {"Sus2 (mineur)", "1,2,3-,4,5", "Pour construire des accords sus", {"sus2"}}},
-    {"sus4_scale", {"Sus4 (mineur)", "1,4,5,6-", "Pour construire des accords sus", {"sus4"}}},
 };

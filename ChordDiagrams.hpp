@@ -392,7 +392,7 @@ private:
         add("maj7",  "1,3,5,7");    // Majeur 7
         add("M7",    "1,3,5,7");    // Majeur 7 (alt)
         add("mM7",   "1,3-,5,7");   // Mineur / majeur 7
-        add("dim7",  "1,3-,5-,6");  // Diminué 7  (bb7 = 6ème degré)
+        add("dim7",  "1,3-,5-,7--"); // Diminué 7  (7ème diminuée)
         add("m7b5",  "1,3-,5-,7-"); // Semi-diminué (min7 quinte bémol)
         add("aug7",  "1,3,5+,7-");  // Augmenté 7
         add("7sus4", "1,4,5,7-");   // 7sus4

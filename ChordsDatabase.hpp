@@ -112,7 +112,7 @@ const std::map<std::string, ChordEntry> ChordsDatabase::database = {
     {"dominant7", {"Dominante 7", "3,5,7-", "Accord majeur avec 7ème mineure", {"7", "dominant"}}},
     {"minor7", {"Mineur 7", "3-,5,7-", "Accord mineur avec 7ème mineure", {"m7", "min7"}}},
     {"minor7flat5", {"Mineur 7b5 (demi-diminué)", "3-,5-,7-", "Accord demi-diminué", {"m7b5", "min7b5", "half_diminished"}}},
-    {"diminished7", {"Diminué 7", "3-,5-,7-", "Accord diminué avec 7ème diminuée (6)", {"dim7", "o7"}}},
+    {"diminished7", {"Diminué 7", "3-,5-,7--", "Accord diminué avec 7ème diminuée (Do, Mib, Solb, Sibb)", {"dim7", "o7"}}},
 
     // Accords majeurs (7ème majeure)
     {"major7", {"Majeur 7", "3,5,7", "Accord majeur avec 7ème majeure", {"maj7", "M7"}}},
@@ -133,7 +133,7 @@ const std::map<std::string, ChordEntry> ChordsDatabase::database = {
     // Accords avec extensions
     {"major7sharp5", {"Majeur 7#5", "3,5+,7", "Accord majeur 7 augmenté", {"maj7+5", "M7+5"}}},
     {"dominant7sharp5", {"Dominante 7#5", "3,5+,7-", "Accord 7 augmenté", {"7+5", "7#5"}}},
-    {"dominant7flat5", {"Dominante 7b5", "3,5-,7-", "Accord 7 diminué", {"7b5", "7-5"}}},
+    {"dominant7flat5", {"Dominante 7b5", "3,5-,7-", "Accord 7 avec quinte diminuée", {"7b5", "7-5"}}},
 
     // Accords sus avec 7ème
     {"sus2_7", {"Sus2 7", "2,5,7-", "Accord sus2 avec 7ème mineure", {"sus2_7"}}},
@@ -155,7 +155,7 @@ const std::map<std::string, ChordEntry> ChordsDatabase::database = {
     {"7sharp9", {"7#9 (Hendrix)", "3,5,7-,2+", "Accord 7 avec 9ème augmentée", {"7#9", "7+9"}}},
 
     // Accords spéciaux
-    {"polychord_maj_min", {"Polychord maj/min", "3,5,3-", "Majeur et mineur simultanément", {"polychord"}}},
-    {"quartal", {"Quartal", "4,4", "Accord construit en quartes", {"quartal"}}},
-    {"quintal", {"Quintal", "5,5", "Accord construit en quintes", {"quintal"}}},
+    {"polychord_maj_min", {"Tierce majeure et mineure", "3,5,3-", "Tierces majeure et mineure simultanées (son blues, cf. 7#9)", {"split_third"}}},
+    {"quartal", {"Quartal", "4,7-", "Empilement de quartes justes (Do, Fa, Sib)", {"quartal"}}},
+    {"quintal", {"Quintal", "5,2", "Empilement de quintes justes (Do, Sol, Ré)", {"quintal"}}},
 };

@@ -2,6 +2,8 @@
 // Tests du cœur sans affichage : Tuning, Fretboard, ChordDiagram.
 
 #include "ChordDiagrams.hpp"
+#include "ChordsDatabase.hpp"
+#include "ScalesDatabase.hpp"
 #include "Fretboard.hpp"
 #include "ScaleStructure.hpp"
 #include <iostream>
@@ -73,6 +75,36 @@ int main() {
 
     auto c = db.find("C", std_t, 1);
     check(!c.empty() && c[0].startFret() == 1, "C ouvert : diagramme dès la case 1");
+
+    // ── Validation des formules ───────────────────────────────────────────
+    auto throws = [](auto make) { try { make(); return false; } catch (const std::invalid_argument &) { return true; } };
+    check(throws([] { ChordStructure("4,4"); }), "Accord : degré répété refusé");
+    check(throws([] { ChordStructure("3,9"); }), "Accord : degré 9 refusé (écrire 2)");
+    check(throws([] { ChordStructure("3,x"); }), "Accord : degré non numérique refusé");
+    check(throws([] { ChordStructure("3,5*"); }), "Accord : modificateur invalide refusé");
+    check(throws([] { ScaleStructure("1,,3"); }), "Gamme : degré vide refusé");
+    check(ScaleStructure("1,3--,5").getDegreeLabels()[1] == "3--", "Gamme : double altération acceptée");
+
+    // ── Bases de données : toutes les entrées, toutes les fondamentales ───
+    const char *ROOTS[] = {"C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"};
+    std::string bad;
+    for (const auto &k : ScalesDatabase::listScales())
+        for (const char *r : ROOTS)
+            try { ScaleStructure(ScalesDatabase::getFormula(k)).getNotes(r); }
+            catch (const std::exception &e) { bad += " " + k + "/" + r; }
+    check(bad.empty(), "Toutes les gammes se calculent" + bad);
+
+    bad.clear();
+    std::string noDiagram;
+    for (const auto &k : ChordsDatabase::listChords()) {
+        for (const char *r : ROOTS) {
+            try { ChordStructure(ChordsDatabase::getFormula(k)).getChordNotes(r); }
+            catch (const std::exception &e) { bad += " " + k + "/" + r; }
+        }
+        if (db.findByFormula(ChordsDatabase::getFormula(k), "C", std_t).empty()) noDiagram += " " + k;
+    }
+    check(bad.empty(), "Tous les accords se calculent" + bad);
+    std::cout << "  (sans position jouable en C :" << (noDiagram.empty() ? " aucun" : noDiagram) << ")\n";
 
     std::cout << "\nResults: " << passed << " passed, " << failed << " failed\n";
     return failed ? 1 : 0;
