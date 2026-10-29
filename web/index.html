@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MusiCLI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand">MusiCLI</h1>
+
+    <div class="segmented" role="tablist" aria-label="Mode">
+      <button role="tab" data-mode="scale">Gammes</button>
+      <button role="tab" data-mode="chord">Accords</button>
+    </div>
+
+    <label class="field">Accordage
+      <select id="tuning"></select>
+    </label>
+
+    <label class="field">Cases
+      <select id="frets">
+        <option value="12">12</option>
+        <option value="15">15</option>
+        <option value="22">22</option>
+        <option value="24">24</option>
+      </select>
+    </label>
+
+    <div class="segmented" aria-label="Étiquettes">
+      <button data-labels="notes">Notes</button>
+      <button data-labels="degrees">Degrés</button>
+    </div>
+
+    <label class="check"><input type="checkbox" id="showAll"> Toutes les notes</label>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <input id="filter" type="search" placeholder="Filtrer…" autocomplete="off">
+      <div id="list" class="list" role="listbox" tabindex="0" aria-label="Type"></div>
+    </aside>
+
+    <main class="main">
+      <section class="roots">
+        <div id="roots" class="root-buttons" role="radiogroup" aria-label="Fondamentale"></div>
+        <div class="segmented small" aria-label="Altérations">
+          <button data-acc="sharp" title="Fondamentales en dièses">♯</button>
+          <button data-acc="flat" title="Fondamentales en bémols">♭</button>
+        </div>
+      </section>
+
+      <section class="summary">
+        <div>
+          <h2 id="title"></h2>
+          <p id="subtitle" class="muted"></p>
+        </div>
+        <button id="play" class="play" title="Jouer (Espace)">▶ Jouer</button>
+      </section>
+
+      <div id="error" class="error" hidden></div>
+
+      <div id="notes" class="notes"></div>
+
+      <div class="neck-wrap"><svg id="neck" class="neck" role="img" aria-label="Manche"></svg></div>
+      <div id="legend" class="legend"></div>
+
+      <section id="diagramsSection" class="diagrams-section">
+        <h3>Positions <span class="muted">— cliquer pour entendre et voir sur le manche</span></h3>
+        <div id="diagrams" class="diagrams"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loading" class="loading">Chargement du moteur…</div>
+
+  <script src="musicli.js"></script>
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

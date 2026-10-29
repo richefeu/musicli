@@ -20,7 +20,7 @@ createMusiCLI().then((M) => {
   check(grid.length === 6 && grid[0].length === 13, "Grille 6 × 13");
   check(grid[0][5].isRoot && grid[0][5].midi === 45, "Mi grave case 5 = La (MIDI 45)");
 
-  const bb = M.chordDiagrams(0, "", "Bb", 3);
+  const bb = M.chordDiagrams(0, "major", "Bb", 3);
   check(bb.length > 0 && !bb[0].names.includes("A#"), "Bb : diagramme orthographié en Bb");
   check(bb[0].midi.length === bb[0].frets.filter((f) => f >= 0).length, "Bb : une hauteur MIDI par corde jouée");
 

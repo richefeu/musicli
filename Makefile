@@ -17,7 +17,7 @@ WASM_FLAGS := -std=c++17 -O2 -I. -fexceptions -lembind \
 
 HEADERS := ScaleStructure.hpp ChordStructure.hpp ScalesDatabase.hpp ChordsDatabase.hpp Tuning.hpp Fretboard.hpp ChordDiagrams.hpp TextRenderer.hpp Terminal.hpp NcursesMenu.hpp Application.hpp
 
-.PHONY: test test_scale test_chord test_chord_diagram test_fretboard test_databases test_wasm app wasm clean help
+.PHONY: test test_scale test_chord test_chord_diagram test_fretboard test_databases test_wasm app wasm open clean help
 
 # Default: compile app
 all: app
@@ -40,6 +40,10 @@ $(WASM_OUT): $(WASM_SRC) $(HEADERS)
 	@echo "Compiling WebAssembly module..."
 	$(EMXX) $(WASM_FLAGS) $(WASM_SRC) -o $(WASM_OUT)
 	@echo "[OK] $(WASM_OUT)"
+
+# Ouvre l'interface web dans le navigateur (aucun serveur nécessaire)
+open: $(WASM_OUT)
+	@open web/index.html
 
 test_wasm: $(WASM_OUT)
 	@node web/test_bindings.cjs
@@ -91,6 +95,7 @@ help:
 	@echo "  make app             - Compile the CLI application (default)"
 	@echo "  make run             - Compile and run the CLI application"
 	@echo "  make wasm            - Compile the WebAssembly module (needs Emscripten)"
+	@echo "  make open            - Build and open the web interface (no server needed)"
 	@echo "  make test_wasm       - Test the WebAssembly module with Node"
 	@echo "  make test            - Run all unit tests"
 	@echo "  make test_scale      - Run scale tests"

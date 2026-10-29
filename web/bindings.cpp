@@ -6,7 +6,7 @@
 //   const M = await createMusiCLI();
 //   M.scaleNotes("dorian", "D")          → { notes: [...], degrees: [...] }
 //   M.fretboard(0, 12, "D", notes, degs) → [[{pc, midi, name, degree, inSet, isRoot}, …], …]
-//   M.chordDiagrams(0, "m7", "A", 3)     → [{ frets, startFret, names, isRoot, midi }, …]
+//   M.chordDiagrams(0, "minor7", "A", 3) → [{ frets, startFret, names, isRoot, midi }, …]
 
 #include "ChordDiagrams.hpp"
 #include "ChordsDatabase.hpp"
@@ -81,6 +81,7 @@ val catalog(const std::vector<std::string> &keys, const Entry &(*get)(const std:
         o.set("name", e.name);
         o.set("formula", e.formula);
         o.set("description", e.description);
+        o.set("aliases", toArray(e.aliases));
         a.set(i++, o);
     }
     return a;
@@ -132,12 +133,13 @@ val fretboard(int tuning, int maxFret, const std::string &root,
     return rows;
 }
 
-// suffix : type d'accord de DiagramsDatabase ("", "m", "7", "maj7" …)
-val chordDiagrams(int tuning, const std::string &suffix,
+// key : clé de ChordsDatabase ("major", "minor7" …)
+val chordDiagrams(int tuning, const std::string &key,
                   const std::string &root, int maxResults) {
     std::vector<ChordDiagram> diags;
     guarded([&] {
-        diags = DiagramsDatabase().find(root + suffix, tuningAt(tuning), maxResults);
+        diags = DiagramsDatabase().findByFormula(ChordsDatabase::getFormula(key), root,
+                                                 tuningAt(tuning), "", maxResults);
         return val::undefined();
     });
     val a = val::array();
@@ -160,17 +162,12 @@ val chordDiagrams(int tuning, const std::string &suffix,
     return a;
 }
 
-val chordTypes() {
-    return toArray(DiagramsDatabase().knownTypes());
-}
-
 } // namespace
 
 EMSCRIPTEN_BINDINGS(musicli) {
     emscripten::function("tunings", &tunings);
     emscripten::function("scales", &scales);
     emscripten::function("chords", &chords);
-    emscripten::function("chordTypes", &chordTypes);
     emscripten::function("scaleNotes", &scaleNotes);
     emscripten::function("chordNotes", &chordNotes);
     emscripten::function("fretboard", &fretboard);

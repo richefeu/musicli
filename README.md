@@ -118,6 +118,22 @@ aucun affichage : il renvoie des données. Seuls `TextRenderer`, `Terminal` et
 `Application` écrivent dans le terminal, ce qui permet d'ajouter une autre interface
 (graphique, web) sans toucher au calcul.
 
+## 🌐 Interface web
+
+```bash
+make open     # compile le moteur en WebAssembly et ouvre web/index.html
+```
+
+Aucun serveur : la page s'ouvre directement depuis le disque (`file://`), le moteur
+WebAssembly étant embarqué dans `web/musicli.js`. Nécessite Emscripten
+(`brew install emscripten`).
+
+- Gammes et accords, 12 fondamentales (♯ ou ♭), 6 accordages, 12 à 24 cases
+- Manche coloré par fonction (fondamentale, tierce, quinte, septième), notes ou degrés
+- Positions d'accords ; un clic sur un diagramme le joue et le montre sur le manche
+- Son de corde pincée (Karplus-Strong) : clic sur une case, une note, ou **Espace**
+- Clavier : ↑/↓ type suivant/précédent, ←/→ fondamentale, Échap désélectionne
+
 ## ✅ Points forts
 
 - ✅ **Musicalement correct** : gestion des enharmoniques (C# ≠ Db)
