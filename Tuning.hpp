@@ -53,4 +53,8 @@ struct Tuning {
     static Tuning openE()    { return {"Open E (EBEG#Be)",  {"E","B","E","G#","B","e"}, {40,47,52,56,59,64}}; }
     static Tuning dadgad()   { return {"DADGAD",             {"D","A","D","G","A","d"}, {38,45,50,55,57,62}}; }
 
+    // Tous les accordages prédéfinis, dans l'ordre de présentation.
+    static std::vector<Tuning> presets() {
+        return {standard(), dropD(), openG(), openD(), openE(), dadgad()};
+    }
 };

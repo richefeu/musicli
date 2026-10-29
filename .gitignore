@@ -1,0 +1,22 @@
+# Binaires natifs
+/musicli
+/test_scale
+/test_chord
+/test_chord_diagram
+/test_fretboard
+/test_databases
+*.o
+*.pch
+*.dSYM/
+a.out
+
+# Module WebAssembly généré (make wasm)
+/web/musicli.js
+/web/musicli.wasm
+
+# macOS
+.DS_Store
+Icon?
+
+# Réglages locaux de Claude Code
+.claude/settings.local.json
