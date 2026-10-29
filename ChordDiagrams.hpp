@@ -2,55 +2,24 @@
 
 /**
  * @file ChordDiagrams.hpp
- * @brief Calcul et affichage de diagrammes d'accords pour guitare.
+ * @brief Calcul de diagrammes d'accords pour guitare (sans affichage).
  *
  * Architecture :
- *   Tuning           — accordage des 6 cordes (usines : standard, dropD, openG, dadgad, …)
+ *   Tuning           — accordage des 6 cordes (voir Tuning.hpp)
  *   ChordPos         — une position de l'accord sur le manche (cases + corde de la fondamentale)
- *   ChordDiagram     — diagramme complet (position + accordage + info harmonique + affichage)
+ *   ChordDiagram     — diagramme complet (position + accordage + info harmonique)
  *   ChordFinder      — recherche de positions par backtracking sur le manche
  *   DiagramsDatabase — registre des types d'accords (suffixe → formule) + lookup
+ *
+ * L'affichage terminal est dans TextRenderer.hpp.
  */
 
 #include "ChordStructure.hpp"
+#include "Tuning.hpp"
 #include <algorithm>
-#include <iomanip>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-// ─── Tuning ───────────────────────────────────────────────────────────────────
-
-struct Tuning {
-    std::string              name;
-    std::vector<std::string> strings; // [0]=corde grave, [5]=corde aiguë
-
-    // Convertit un nom de note ("C", "F#", "Bb", "e" …) en classe de hauteur 0–11.
-    // Normalise la première lettre en majuscule pour accepter "e", "d", etc.
-    static int noteToPC(const std::string &note) {
-        static const std::unordered_map<std::string, int> m = {
-            {"C",0},{"B#",0},{"C#",1},{"Db",1},{"D",2},{"D#",3},{"Eb",3},
-            {"E",4},{"Fb",4},{"F",5},{"E#",5},{"F#",6},{"Gb",6},{"G",7},
-            {"G#",8},{"Ab",8},{"A",9},{"A#",10},{"Bb",10},{"B",11},{"Cb",11}
-        };
-        std::string n = note;
-        if (!n.empty())
-            n[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(n[0])));
-        auto it = m.find(n);
-        return (it != m.end()) ? it->second : -1;
-    }
-
-    int openPC(int s)          const { return noteToPC(strings[s]); }
-    int noteAt(int s, int fret) const { return (openPC(s) + fret) % 12; }
-
-    static Tuning standard() { return {"Standard (EADGBe)", {"E","A","D","G","B","e"}}; }
-    static Tuning dropD()    { return {"Drop D (DADGBe)",   {"D","A","D","G","B","e"}}; }
-    static Tuning openG()    { return {"Open G (DGDGBd)",   {"D","G","D","G","B","d"}}; }
-    static Tuning openD()    { return {"Open D (DADFAd)",   {"D","A","D","F","A","d"}}; }
-    static Tuning openE()    { return {"Open E (EBE G#Be)", {"E","B","E","G","B","e"}}; } // G# = Ab
-    static Tuning dadgad()   { return {"DADGAD",             {"D","A","D","G","A","d"}}; }
-};
 
 // ─── ChordPos ─────────────────────────────────────────────────────────────────
 
@@ -92,143 +61,70 @@ struct ChordPos {
 // ─── ChordDiagram ─────────────────────────────────────────────────────────────
 //
 // Encapsule une position + l'accordage + les informations harmoniques.
-// La méthode display() produit un diagramme ASCII dans lequel :
-//   • les cordes sont des lignes verticales │ continues,
-//   • les frettes sont des traits horizontaux ─┼─ qui les traversent,
-//   • une note pressée remplace le │ par son nom (rouge = fondamentale, vert = autre),
-//   • une corde étouffée est affichée en mode atténué.
+// Fournit tout ce dont un renderer a besoin : fenêtre de cases à dessiner,
+// nom correctement orthographié de chaque note, hauteurs MIDI à jouer.
 
 class ChordDiagram {
 public:
-    ChordDiagram(const ChordPos        &pos,
-                 const Tuning          &tuning,
-                 const std::vector<int> &chordPCs,
-                 int                    rootPC,
-                 const std::string     &chordName = "")
+    static constexpr int ROWS = 4; // nombre de cases dessinées
+
+    ChordDiagram(const ChordPos                 &pos,
+                 const Tuning                   &tuning,
+                 const std::vector<int>         &chordPCs,
+                 int                             rootPC,
+                 const std::string              &chordName = "",
+                 const std::vector<std::string> &chordNotes = {})
         : pos_(pos), tuning_(tuning), chordPCs_(chordPCs),
-          rootPC_(rootPC), chordName_(chordName) {}
+          rootPC_(rootPC), chordName_(chordName), chordNotes_(chordNotes) {}
 
     // ── Accesseurs ──────────────────────────────────────────────────────────
 
-    const ChordPos        &pos()      const { return pos_;      }
-    const Tuning          &tuning()   const { return tuning_;   }
-    const std::vector<int> &chordPCs() const { return chordPCs_; }
-    int                    rootPC()   const { return rootPC_;   }
-    const std::string     &chordName() const { return chordName_; }
+    const ChordPos                 &pos()        const { return pos_;        }
+    const Tuning                   &tuning()     const { return tuning_;     }
+    const std::vector<int>         &chordPCs()   const { return chordPCs_;   }
+    int                             rootPC()     const { return rootPC_;     }
+    const std::string              &chordName()  const { return chordName_;  }
+    const std::vector<std::string> &chordNotes() const { return chordNotes_; }
 
-    // ── Affichage ────────────────────────────────────────────────────────────
+    // ── Données pour le rendu ───────────────────────────────────────────────
 
-    void display(const std::string &title = "") const {
-        static const std::string RST = "\033[0m";
-        static const std::string RED = "\033[1;31m";  // fondamentale
-        static const std::string GRN = "\033[1;32m";  // autre note de l'accord
-        static const std::string DIM = "\033[2m";     // corde étouffée
-
-        const std::vector<std::string> &STR = tuning_.strings;
-        const std::string &t = title.empty() ? chordName_ : title;
-        if (!t.empty()) std::cout << "\n  " << t << "\n";
-
-        // Case de départ : accord ouvert = case 1 si toutes les notes tiennent
-        // dans les 4 premières cases ; sinon on commence à la case la plus basse.
+    // Première case dessinée : accord ouvert = case 1 si toutes les notes tiennent
+    // dans les ROWS premières cases ; sinon on commence à la case la plus basse.
+    int startFret() const {
         bool hasOpen = false;
         for (int f : pos_.frets) if (f == 0) hasOpen = true;
-        int hiF = pos_.hiFret();
-        int startFret = (hasOpen && hiF <= 4) ? 1
-                      : (pos_.loFret() <= 1)  ? 1
-                      :  pos_.loFret();
+        if (hasOpen && pos_.hiFret() <= ROWS) return 1;
+        return (pos_.loFret() <= 1) ? 1 : pos_.loFret();
+    }
 
-        // Chaque corde : 3 chars. Préfixe : 4 chars (pour le label "XXfr").
-        const std::string PFX = "    ";
+    // Nom de la note jouée sur la corde s (orthographe de l'accord si connue).
+    std::string noteName(int s) const {
+        if (pos_.frets[s] < 0) return "";
+        int pc = tuning_.noteAt(s, pos_.frets[s]);
+        for (const auto &n : chordNotes_)
+            if (Tuning::noteToPC(n) == pc) return n;
+        return Tuning::pcName(pc);
+    }
 
-        // Noms des cordes (haut)
-        std::cout << PFX;
-        for (int s = 0; s < 6; ++s) printStrName_(STR[s]);
-        std::cout << "\n";
+    bool isRoot(int s) const {
+        return pos_.frets[s] >= 0 && tuning_.noteAt(s, pos_.frets[s]) == rootPC_;
+    }
 
-        // Marqueurs x (étouffée, atténué) / o (à vide) / espace
-        std::cout << PFX;
-        for (int s = 0; s < 6; ++s) {
-            if      (pos_.frets[s] <  0) std::cout << DIM << " x " << RST;
-            else if (pos_.frets[s] == 0) std::cout << " o ";
-            else                          std::cout << "   ";
-        }
-        std::cout << "\n";
-
-        // Sillet : label de position ("XXfr") ou espaces si on est en case 1
-        if (startFret > 1) std::cout << std::setw(2) << startFret << "fr";
-        else                std::cout << PFX;
-        std::cout << hline_("═", 18) << "\n";
-
-        // Slots de cases (4 rangées)
-        for (int row = 0; row < 4; ++row) {
-            int fret = startFret + row;
-
-            // Cordes + notes
-            std::cout << PFX;
-            for (int s = 0; s < 6; ++s) {
-                if (pos_.frets[s] < 0) {
-                    std::cout << DIM << " │ " << RST;
-                } else if (pos_.frets[s] == fret) {
-                    int pc = tuning_.noteAt(s, fret);
-                    const std::string &col = (pc == rootPC_) ? RED : GRN;
-                    printNote_(pc, col);
-                } else {
-                    std::cout << " │ ";
-                }
-            }
-            std::cout << " " << fret << "\n";
-
-            // Frette (┼ atténué sur cordes étouffées)
-            std::cout << PFX;
-            for (int s = 0; s < 6; ++s) {
-                if (pos_.frets[s] < 0) std::cout << DIM << "─┼─" << RST;
-                else                    std::cout << "─┼─";
-            }
-            std::cout << "\n";
-        }
-
-        // Noms des cordes (bas)
-        std::cout << PFX;
-        for (int s = 0; s < 6; ++s) printStrName_(STR[s]);
-        std::cout << "\n";
+    // Hauteurs MIDI des cordes jouées, de la plus grave à la plus aiguë.
+    std::vector<int> midiNotes() const {
+        std::vector<int> m;
+        for (int s = 0; s < tuning_.stringCount(); ++s)
+            if (pos_.frets[s] >= 0) m.push_back(tuning_.midiAt(s, pos_.frets[s]));
+        return m;
     }
 
 private:
-    ChordPos         pos_;
-    Tuning           tuning_;
-    std::vector<int> chordPCs_;
-    int              rootPC_;
-    std::string      chordName_;
-
-    // ── Helpers d'affichage ─────────────────────────────────────────────────
-
-    static std::string hline_(const std::string &unit, int n) {
-        std::string r;
-        r.reserve(unit.size() * n);
-        for (int i = 0; i < n; ++i) r += unit;
-        return r;
-    }
-
-    static const std::string &pcName_(int pc) {
-        static const std::string names[12] = {
-            "C","C#","D","D#","E","F","F#","G","G#","A","A#","B"
-        };
-        return names[pc % 12];
-    }
-
-    // Imprime un nom de note coloré dans une cellule de 3 chars.
-    static void printNote_(int pc, const std::string &color) {
-        static const std::string RST = "\033[0m";
-        const std::string &n = pcName_(pc);
-        std::cout << color
-                  << (n.size() == 1 ? " " + n + " " : n + " ")
-                  << RST;
-    }
-
-    // Imprime le nom d'une corde centré dans 3 chars.
-    static void printStrName_(const std::string &n) {
-        std::cout << (n.size() == 1 ? " " + n + " " : n + " ");
-    }
+    ChordPos                 pos_;
+    Tuning                   tuning_;
+    std::vector<int>         chordPCs_;
+    int                      rootPC_;
+    std::string              chordName_;
+    std::vector<std::string> chordNotes_;
 };
 
 // ─── ChordFinder ──────────────────────────────────────────────────────────────
@@ -375,7 +271,7 @@ private:
 // Exemple :
 //   DiagramsDatabase db;
 //   auto diags = db.find("Am", Tuning::standard());
-//   for (auto& d : diags) d.display("La mineur");
+//   for (auto& d : diags) TextRenderer::chordDiagram(std::cout, d, "La mineur");
 
 class DiagramsDatabase {
 public:
@@ -436,8 +332,14 @@ public:
                                              const Tuning      &tuning,
                                              const std::string &chordName = "",
                                              int                maxResults = 3) const {
-        // Calcul des classes de hauteur via ChordStructure
-        std::vector<int> chordPCs = formulaToPCs_(formula, rootNote);
+        // Calcul des notes et classes de hauteur via ChordStructure
+        std::vector<std::string> chordNotes;
+        try {
+            chordNotes = ChordStructure(formula).getChordNotes(rootNote);
+        } catch (...) {
+            return {};
+        }
+        std::vector<int> chordPCs = notesToPCs_(chordNotes);
         if (chordPCs.empty()) return {};
 
         int rootPC = Tuning::noteToPC(rootNote);
@@ -451,31 +353,24 @@ public:
         std::vector<ChordDiagram> result;
         result.reserve(positions.size());
         for (auto &p : positions)
-            result.emplace_back(p, tuning, chordPCs, rootPC, chordName);
+            result.emplace_back(p, tuning, chordPCs, rootPC, chordName, chordNotes);
         return result;
     }
 
 private:
     std::unordered_map<std::string, std::string> typeFormulas_;
 
-    // Calcule les classes de hauteur d'un accord à partir de sa formule + fondamentale.
-    static std::vector<int> formulaToPCs_(const std::string &formula,
-                                           const std::string &rootNote) {
-        try {
-            ChordStructure cs(formula);
-            auto noteNames = cs.getChordNotes(rootNote);
-            std::vector<int> pcs;
-            pcs.reserve(noteNames.size());
-            for (const auto &n : noteNames) {
-                int pc = Tuning::noteToPC(n);
-                if (pc >= 0) pcs.push_back(pc);
-            }
-            std::sort(pcs.begin(), pcs.end());
-            pcs.erase(std::unique(pcs.begin(), pcs.end()), pcs.end());
-            return pcs;
-        } catch (...) {
-            return {};
+    // Classes de hauteur distinctes et triées d'une liste de notes.
+    static std::vector<int> notesToPCs_(const std::vector<std::string> &noteNames) {
+        std::vector<int> pcs;
+        pcs.reserve(noteNames.size());
+        for (const auto &n : noteNames) {
+            int pc = Tuning::noteToPC(n);
+            if (pc >= 0) pcs.push_back(pc);
         }
+        std::sort(pcs.begin(), pcs.end());
+        pcs.erase(std::unique(pcs.begin(), pcs.end()), pcs.end());
+        return pcs;
     }
 
     void initDefaults_() {

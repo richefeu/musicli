@@ -4,7 +4,6 @@
 #include <map>
 #include <vector>
 #include <stdexcept>
-#include <iostream>
 #include <algorithm>
 
 struct ChordEntry {
@@ -94,12 +93,6 @@ public:
         return result;
     }
 
-    // Afficher la base de données
-    static void printDatabase() {
-        for (const auto& [name, entry] : database) {
-            std::cout << name << " : " << entry.formula << " - " << entry.description << std::endl;
-        }
-    }
 };
 
 // ==================== BASE DE DONNÉES ====================

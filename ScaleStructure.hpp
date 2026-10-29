@@ -243,6 +243,18 @@ public:
         return formula;
     }
 
+    // Degrés de la gamme ("1", "3-", "4+" …), dans le même ordre que getNotes().
+    std::vector<std::string> getDegreeLabels() const {
+        std::vector<std::string> labels;
+        for (const auto& di : degrees) {
+            std::string l = std::to_string(di.degree);
+            if (di.alteration > 0) l += std::string(di.alteration, '+');
+            else if (di.alteration < 0) l += std::string(-di.alteration, '-');
+            labels.push_back(l);
+        }
+        return labels;
+    }
+
     // Détecter si cette gamme est probablement une gamme mineure
     bool isMinorScale() const {
         // Les gammes mineures ont généralement un 3e degré mineur (b3)

@@ -7,9 +7,9 @@ DB_SRC := test_databases.cpp
 CLI_SRC := main.cpp
 CLI_APP := musicli
 
-HEADERS := ScaleStructure.hpp ChordStructure.hpp ScalesDatabase.hpp ChordsDatabase.hpp Terminal.hpp GuitarNeck.hpp ChordDiagrams.hpp Application.hpp
+HEADERS := ScaleStructure.hpp ChordStructure.hpp ScalesDatabase.hpp ChordsDatabase.hpp Tuning.hpp Fretboard.hpp ChordDiagrams.hpp TextRenderer.hpp Terminal.hpp NcursesMenu.hpp Application.hpp
 
-.PHONY: test test_scale test_chord test_chord_diagram test_databases app clean help
+.PHONY: test test_scale test_chord test_chord_diagram test_fretboard test_databases app clean help
 
 # Default: compile app
 all: app
@@ -25,7 +25,7 @@ $(CLI_APP): $(CLI_SRC) $(HEADERS)
 run: $(CLI_APP)
 	@./$(CLI_APP)
 
-test: test_scale test_chord test_chord_diagram test_databases
+test: test_scale test_chord test_chord_diagram test_fretboard test_databases
 
 test_scale:
 	@echo "Compiling scale tests..."
@@ -48,6 +48,13 @@ test_chord_diagram:
 	@echo "Running chord diagram tests..."
 	@./test_chord_diagram 2>/dev/null || echo "Note: Binary execution failed (macOS restriction)."
 
+test_fretboard:
+	@echo "\nCompiling fretboard tests..."
+	$(CXX) $(CXXFLAGS) test_fretboard.cpp -o test_fretboard 2>&1
+	@echo "[OK] Compilation successful"
+	@echo "Running fretboard tests..."
+	@./test_fretboard 2>/dev/null || echo "Note: Binary execution failed (macOS restriction)."
+
 test_databases:
 	@echo "\nCompiling database tests..."
 	$(CXX) $(CXXFLAGS) $(DB_SRC) -o test_databases 2>&1
@@ -57,7 +64,7 @@ test_databases:
 
 clean:
 	@echo "Cleaning..."
-	rm -f test_scale test_chord test_chord_diagram test_databases $(CLI_APP) *.o *.pch
+	rm -f test_scale test_chord test_chord_diagram test_fretboard test_databases $(CLI_APP) *.o *.pch
 	@echo "[OK] Clean complete"
 
 help:
@@ -67,6 +74,7 @@ help:
 	@echo "  make test            - Run all unit tests"
 	@echo "  make test_scale      - Run scale tests"
 	@echo "  make test_chord      - Run chord tests"
+	@echo "  make test_fretboard  - Run fretboard (core) tests"
 	@echo "  make test_databases  - Run database tests"
 	@echo "  make clean           - Remove compiled files"
 	@echo "  make help            - Show this help message"

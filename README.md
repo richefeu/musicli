@@ -99,14 +99,24 @@ MaMusique/
 ├── ScalesDatabase.hpp          # Base de données de gammes (27 entrées)
 ├── ChordStructure.hpp          # Classe des accords
 ├── ChordsDatabase.hpp          # Base de données d'accords (37 entrées)
-├── GuitarNeck.hpp              # (À développer)
+├── Tuning.hpp                  # Accordages, hauteurs (classe de hauteur, MIDI)
+├── Fretboard.hpp               # Notes d'une gamme/accord sur le manche (grille de données)
+├── ChordDiagrams.hpp           # Recherche de positions d'accords
+├── TextRenderer.hpp            # Rendu terminal (ANSI) du manche et des diagrammes
+├── Terminal.hpp, NcursesMenu.hpp, Application.hpp, main.cpp  # Interface CLI
 ├── test_scale.cpp              # Tests des gammes (8 cas)
 ├── test_chord.cpp              # Tests des accords (10 cas)
+├── test_fretboard.cpp          # Tests du cœur manche/diagrammes (sans affichage)
 ├── test_databases.cpp          # Démonstration des bases de données
 ├── Makefile                    # Build et tests
 ├── TODO.md                     # Tâches futures
 └── README.md                   # Ce fichier
 ```
+
+Le **cœur** (`*Structure`, `*Database`, `Tuning`, `Fretboard`, `ChordDiagrams`) ne fait
+aucun affichage : il renvoie des données. Seuls `TextRenderer`, `Terminal` et
+`Application` écrivent dans le terminal, ce qui permet d'ajouter une autre interface
+(graphique, web) sans toucher au calcul.
 
 ## ✅ Points forts
 
@@ -119,7 +129,6 @@ MaMusique/
 
 ## 🎯 Prochaines étapes (TODO.md)
 
-- GuitarNeck : visualisation des accords sur le manche de guitare
 - Voicings : positions variées d'accords
 - Renversements : inversions d'accords
 - Progressions d'accords : prédéfinies (I-IV-V, ii-V-I, etc.)

@@ -3,10 +3,12 @@
 #include "ChordDiagrams.hpp"
 #include "ChordStructure.hpp"
 #include "ChordsDatabase.hpp"
-#include "GuitarNeck.hpp"
+#include "Fretboard.hpp"
 #include "ScaleStructure.hpp"
 #include "ScalesDatabase.hpp"
 #include "Terminal.hpp"
+#include "TextRenderer.hpp"
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -46,8 +48,8 @@ private:
             {"Standard  EADGBe", "Le plus courant"},
             {"Drop D    DADGBe", "Corde grave en Ré"},
             {"Open G    DGDGBd", "Sol ouvert — blues, slide"},
-            {"Open D    DADFAd", "Ré ouvert"},
-            {"Open E    EBEGBe", "Mi ouvert"},
+            {"Open D    DADF#Ad", "Ré ouvert"},
+            {"Open E    EBEG#Be", "Mi ouvert"},
             {"DADGAD",           "Accordage celtique"},
         };
         int sel = Terminal::selectFromListWithArrows("♪ Choisissez un accordage", items);
@@ -106,8 +108,9 @@ private:
     void showCompleteNeck() {
         Terminal::clear();
         Terminal::showTitle("Manche complet");
-        GuitarNeck guitar;
-        guitar.showAllNotes();
+        Fretboard fb;
+        std::cout << "\n=== COMPLETE FRETBOARD ===\n";
+        TextRenderer::neck(std::cout, fb, fb.mapAll());
         Terminal::waitEnter();
     }
 
@@ -126,8 +129,10 @@ private:
             Terminal::showTitle("Accord : " + chordLabel);
 
             // Affichage sur le manche
-            GuitarNeck guitar;
-            guitar.showChord(root + chord_type, cs, root);
+            Fretboard fb;
+            auto notes = cs.getChordNotes(root);
+            TextRenderer::noteList(std::cout, "ACCORD: " + root + chord_type, notes);
+            TextRenderer::neck(std::cout, fb, fb.map(root, notes, cs.getDegreeLabels()));
 
             // Diagrammes d'accords (accordage standard)
             DiagramsDatabase diagDb;
@@ -140,11 +145,9 @@ private:
                 for (size_t i = 0; i < diags.size(); ++i) {
                     std::string label = "Position " + std::to_string(i + 1)
                                       + "  —  " + diags[i].pos().label(t);
-                    diags[i].display(label);
+                    TextRenderer::chordDiagram(std::cout, diags[i], label);
                 }
-                std::cout << "\n  \033[1;31mXX\033[0m = fondamentale   "
-                          << "\033[1;32mXX\033[0m = autre note   "
-                          << "\033[2mx\033[0m = étouffée   o = à vide\n";
+                TextRenderer::diagramLegend(std::cout);
             }
         } catch (const std::exception &e) {
             Terminal::printError(e.what());
@@ -166,8 +169,11 @@ private:
             const auto &entry = ScalesDatabase::getScale(scale_name);
             ScaleStructure scale(entry.formula);
             auto notes = scale.getNotes(root);
-            GuitarNeck guitar;
-            guitar.showScale(entry.name, root, notes);
+            Fretboard fb;
+            FretGrid grid = fb.map(root, notes, scale.getDegreeLabels());
+            TextRenderer::noteList(std::cout, "SCALE: " + entry.name + " (" + root + ")", notes);
+            TextRenderer::scaleMap(std::cout, fb, grid, entry.name, false);
+            TextRenderer::scaleMap(std::cout, fb, grid, entry.name, true);
         } catch (const std::exception &e) {
             Terminal::printError(e.what());
         }
@@ -212,11 +218,9 @@ private:
                 std::string label = chordName
                                   + "  — position " + std::to_string(i + 1)
                                   + "  —  " + diags[i].pos().label(tuning);
-                diags[i].display(label);
+                TextRenderer::chordDiagram(std::cout, diags[i], label);
             }
-            std::cout << "\n  \033[1;31mXX\033[0m = fondamentale   "
-                      << "\033[1;32mXX\033[0m = autre note   "
-                      << "\033[2mx\033[0m = étouffée   o = à vide\n";
+            TextRenderer::diagramLegend(std::cout);
         }
         Terminal::waitEnter();
     }

@@ -17,7 +17,6 @@
  * @date 2024
  */
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -216,19 +215,18 @@ public:
 
     std::string getFormula() const { return formula; }
 
-    void print() const {
-        std::cout << "Formule: " << formula << "\n";
-        std::cout << "Degrés: ";
+    /**
+     * @brief Degrés de l'accord ("1", "3-", "5+" …), dans le même ordre que getChordNotes()
+     */
+    std::vector<std::string> getDegreeLabels() const {
+        std::vector<std::string> labels;
         for (const auto& [degree, mod] : degrees) {
-            std::cout << degree;
-            if (mod != 0) std::cout << (mod > 0 ? "+" : "") << mod;
-            std::cout << " ";
+            std::string l = std::to_string(degree);
+            if (mod > 0) l += "+";
+            else if (mod < 0) l += "-";
+            labels.push_back(l);
         }
-        std::cout << "\nIntervalles (demi-tons): ";
-        for (int interval : getIntervalsInSemitones()) {
-            std::cout << interval << " ";
-        }
-        std::cout << "\nType: " << getChordTypeName() << "\n";
+        return labels;
     }
 
     /**
